@@ -1,18 +1,26 @@
 <?php
 
 // ── Configuration ──────────────────────────────────────────────────────────────
-$DOSSIER = "D:/film/";
+$DOSSIER = "D:/useless/";
 $FFMPEG  = "ffmpeg";
 // ──────────────────────────────────────────────────────────────────────────────
 
-// ── Endpoint de streaming (?stream=fichier[&preview=1]) ───────────────────────
+// Fonction de sécurité : vérifie que le chemin reste bien dans $DOSSIER
+function safePath($DOSSIER, $input)
+{
+    // Supprimer les tentatives de traversée
+    $rel  = str_replace(['../', './', '..\\', '.\\', '..'], '', $input);
+    $rel  = str_replace('\\', '/', $rel);
+    $path = rtrim($DOSSIER, '/\\') . '/' . ltrim($rel, '/\\');
+    // Vérification directe sans realpath (qui échoue sur les accents sous Windows)
+    if (!file_exists($path)) return null;
+    return $path;
+}
 if (isset($_GET["stream"])) {
 
-    $video = basename($_GET["stream"]);
-    $file  = $DOSSIER . $video;
-
-    if (!file_exists($file)) {
-        http_response_code(404);
+    $file = safePath($DOSSIER, $_GET["stream"] ?? "");
+    if (!$file) {
+        http_response_code(403);
         exit;
     }
 
@@ -82,19 +90,21 @@ if (isset($_GET["stream"])) {
 }
 
 // ── Page lecteur ──────────────────────────────────────────────────────────────
-$video = basename($_GET["video"] ?? "");
-$titre = htmlspecialchars(pathinfo($video, PATHINFO_FILENAME));
-$ext   = strtolower(pathinfo($video, PATHINFO_EXTENSION));
-$file  = $DOSSIER . $video;
-$src   = "watch.php?stream=" . urlencode($video);
+$videoRel = $_GET["video"] ?? "";
+$file     = safePath($DOSSIER, $videoRel) ?? "";
+$video    = $file ? basename($file) : "";
+$titre    = htmlspecialchars(pathinfo($video, PATHINFO_FILENAME));
+$ext      = strtolower(pathinfo($video, PATHINFO_EXTENSION));
+$src      = "watch.php?stream=" . urlencode($videoRel);
 
 // Formats non lisibles dans le navigateur → ouvrir l'explorateur sur le dossier
 if ($ext !== "mp4") {
 
     $error = "";
 
-    if (!file_exists($file)) {
-        $error = "Fichier introuvable : " . htmlspecialchars($file);
+    if (!$file || !file_exists($file)) {
+        $attempted = rtrim($DOSSIER, '/\\') . '/' . ltrim($videoRel, '/\\');
+        $error = "Fichier introuvable : " . htmlspecialchars($attempted);
     } else {
         $bat = sys_get_temp_dir() . '/open_folder.bat';
         file_put_contents($bat, '@explorer /select,"' . str_replace('/', '\\', $file) . '"');
@@ -109,77 +119,7 @@ if ($ext !== "mp4") {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= $titre ?></title>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700&display=swap');
-
-            *,
-            *::before,
-            *::after {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-            }
-
-            body {
-                background: #0a0a0f;
-                color: #e0e0e0;
-                font-family: 'Syne', sans-serif;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 28px;
-                padding: 40px 20px;
-                text-align: center;
-            }
-
-            .icon {
-                font-size: 4rem;
-            }
-
-            h1 {
-                font-size: clamp(1.1rem, 3vw, 1.8rem);
-                font-weight: 700;
-                max-width: 640px;
-                line-height: 1.3;
-            }
-
-            .status {
-                font-family: 'Space Mono', monospace;
-                font-size: 13px;
-                padding: 10px 22px;
-                border-radius: 6px;
-                letter-spacing: .04em;
-            }
-
-            .status.ok {
-                background: rgba(60, 180, 80, .12);
-                border: 1px solid rgba(60, 180, 80, .35);
-                color: #5ddb7a;
-            }
-
-            .status.error {
-                background: rgba(233, 69, 96, .12);
-                border: 1px solid rgba(233, 69, 96, .35);
-                color: #e94560;
-            }
-
-            .back {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                color: #888;
-                text-decoration: none;
-                font-family: 'Space Mono', monospace;
-                font-size: 13px;
-                transition: color .2s;
-            }
-
-            .back:hover {
-                color: #e94560;
-            }
-        </style>
+        <link rel="stylesheet" href="./style/watch.css">
     </head>
 
     <body>
@@ -210,76 +150,7 @@ if ($ext !== "mp4") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $titre ?></title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700&display=swap');
-
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background: #0a0a0f;
-            color: #e0e0e0;
-            font-family: 'Syne', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
-        }
-
-        .back {
-            align-self: flex-start;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #888;
-            text-decoration: none;
-            font-family: 'Space Mono', monospace;
-            font-size: 13px;
-            letter-spacing: .05em;
-            margin-bottom: 32px;
-            transition: color .2s;
-        }
-
-        .back:hover {
-            color: #e94560;
-        }
-
-        .back svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        h1 {
-            font-size: clamp(1.2rem, 3vw, 2rem);
-            font-weight: 700;
-            letter-spacing: -.02em;
-            text-align: center;
-            margin-bottom: 28px;
-            max-width: 900px;
-            line-height: 1.2;
-        }
-
-        .player-wrap {
-            width: 100%;
-            max-width: 960px;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 0 0 1px rgba(233, 69, 96, .25), 0 24px 80px rgba(0, 0, 0, .8);
-            background: #000;
-        }
-
-        video {
-            width: 100%;
-            display: block;
-            max-height: 80vh;
-        }
-    </style>
+    <link rel="stylesheet" href="./style/watch-bis.css">
 </head>
 
 <body>
