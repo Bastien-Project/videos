@@ -6,6 +6,12 @@ $EXTENSIONS = ["mp4", "mkv", "avi"];
 $TAGS_FILE  = __DIR__ . "/tags.json";
 // ──────────────────────────────────────────────────────────────────────────────
 
+include "./super-tags.php";
+function isSuperTag(string $tag): bool {
+    global $SUPER_TAGS;
+    return in_array(strtolower(trim($tag)), $SUPER_TAGS, true);
+}
+
 // ── Lecture des tags ───────────────────────────────────────────────────────────
 $tags = [];
 if (file_exists($TAGS_FILE)) {
@@ -41,6 +47,16 @@ foreach ($tags as $t) {
     }
 }
 sort($allTags);
+
+$superTags = [];
+$regularTags = [];
+foreach ($allTags as $tag) {
+    if (isSuperTag($tag)) {
+        $superTags[] = $tag;
+    } else {
+        $regularTags[] = $tag;
+    }
+}
 
 ?>
 <!DOCTYPE html>
@@ -87,9 +103,20 @@ sort($allTags);
 
         <?php if (!empty($allTags)): ?>
             <div class="tag-list" id="tag-list">
-                <?php foreach ($allTags as $tag): ?>
-                    <span class="tag-pill" data-tag="<?= htmlspecialchars($tag, ENT_QUOTES) ?>"><?= htmlspecialchars($tag) ?></span>
-                <?php endforeach; ?>
+                <?php if (!empty($superTags)): ?>
+                    <div class="tag-row tag-row-super">
+                        <?php foreach ($superTags as $tag): ?>
+                            <span class="tag-pill tag-pill-super" data-tag="<?= htmlspecialchars($tag, ENT_QUOTES) ?>"><?= htmlspecialchars($tag) ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($regularTags)): ?>
+                    <div class="tag-row">
+                        <?php foreach ($regularTags as $tag): ?>
+                            <span class="tag-pill" data-tag="<?= htmlspecialchars($tag, ENT_QUOTES) ?>"><?= htmlspecialchars($tag) ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
     </header>

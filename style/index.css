@@ -340,11 +340,28 @@ select#folder-filter:focus {
 
 .tag-list {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 6px;
     padding: 4px 0 2px;
     border-top: 1px solid var(--border);
     margin-top: 4px;
+}
+
+.tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tag-row-super {
+    padding-bottom: 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+
+.tag-pill-super {
+    color: var(--red);
+    border-color: rgba(233, 69, 96, .45);
+    background: rgba(233, 69, 96, .16);
 }
 
 .tag-pill {
@@ -354,7 +371,7 @@ select#folder-filter:focus {
     border-radius: 20px;
     padding: 3px 11px;
     font-family: 'Space Mono', monospace;
-    font-size: 11px;
+    font-size: 14px;
     color: var(--muted);
     cursor: pointer;
     transition: background .15s, color .15s, border-color .15s;
